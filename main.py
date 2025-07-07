@@ -64,23 +64,15 @@ fishes = {
         "Thresher Shark": {"value": 1.4, "weight_range": (150.0, 350.0)}
     },
     "Mythical": {
-        "Megalodon": {"value": 0.5, "weight_range": (15000.0, 35000.0)},
-        "Orca": {"value": 200, "weight_range": (3000.0, 6000.0)},
-        "Leviathan": {"value": 270, "weight_range": (8000.0, 20000.0)},
-        "Narwhal": {"value": 190, "weight_range": (800.0, 1600.0)},
-        "Sea Dragon": {"value": 260, "weight_range": (5000.0, 12000.0)},
+        "Megalodon": {"value": 0.8, "weight_range": (15000.0, 35000.0)},
+        "Orca": {"value": 2.6, "weight_range": (3000.0, 6000.0)},
+        "Kraken": {"value": 0.7, "weight_range": (15000.0, 30000.0)},
+        "Leviathan": {"value": 1.4, "weight_range": (8000.0, 20000.0)},
+        "Narwhal": {"value": 20, "weight_range": (800.0, 1600.0)},
+        "Sea Dragon": {"value": 2.1, "weight_range": (5000.0, 12000.0)}
     },
     "Secret": {
-        "Kraken": {"value": 999, "weight_range": (15000.0, 30000.0)},
-        "Shadow Serpent": {"value": 890, "weight_range": (8000.0, 20000.0)},
-        "Cosmic Jellyfish": {"value": 850, "weight_range": (100.0, 1000.0)},
-        "Celestial Eel": {"value": 870, "weight_range": (500.0, 5000.0)},
-        "Eldritch Pike": {"value": 810, "weight_range": (400.0, 1200.0)},
-        "Chrono Dolphin": {"value": 830, "weight_range": (200.0, 900.0)},
-        "Mythic Blue Whale": {"value": 920, "weight_range": (10000.0, 18000.0)},
-        "Oblivion Carp": {"value": 860, "weight_range": (1200.0, 3000.0)},
-        "Aurora Leviathan": {"value": 970, "weight_range": (15000.0, 25000.0)},
-        "Singularity Ray": {"value": 999, "weight_range": (800.0, 2000.0)}
+        "Shadow Serpent": {"value": 5.5, "weight_range": (8000.0, 20000.0)}
     }
 }
 
