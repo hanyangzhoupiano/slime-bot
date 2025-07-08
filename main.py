@@ -122,15 +122,18 @@ async def fish(ctx):
     rarities = configuration["rarity_weights"];
     chosen_rarity = random.choices(list(rarities.keys()), weights=list(rarities.values()), k=1)[0]
 
-    fish_pool = list(fishes.get(chosen_rarity, {}).items())
+    fish_pool = list(configuration["fishes"].get(chosen_rarity, {}).items())
+    
     if not fish_pool:
-        return
+        return None
+
+    
 
     fish_name, fish_data = random.choice(fish_pool)
 
     min_w, max_w = fish_data["weight_range"]
     weight = round(random.uniform(min_w, max_w), 1)
-    price = round(fish_data["value"] * weight, 2)
+    price = round(fish_data["value"] * weight)
 
     embed = discord.Embed(
         description=f"🎣 You caught a **{fish_name}** ({chosen_rarity})!\n"
