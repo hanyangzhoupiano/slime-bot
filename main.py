@@ -177,76 +177,66 @@ async def sell(ctx):
 
 @bot.command(help="Check your or another user's balance!")
 async def balance(ctx, name: str = None):
-    if name is not None:
-        matching_names = []
-        for member in ctx.guild.members:
-            if name.lower() in member.name.lower() and not member.bot:
-                matching_names.append(member.name)
-        if matching_names:
-            if len(matching_names) > 1:
-                msg = ""
-                for i, n in enumerate(matching_names):
-                    msg += str(i + 1) + ". " + n
-                    if i != len(matching_names) - 1:
-                        msg += "\n"
-                try:
-                    await ctx.send(embed=discord.Embed(
-                        color=int("50B4E6", 16),
-                        description=f"Mutiple users found. Please select a user below, or type cancel:\n{msg}"
-                    ).set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url))
+    target_member = None
 
-                    selection = None
-                    response = await bot.wait_for('message', check=lambda msg: msg.channel == ctx.channel and msg.author == ctx.author, timeout=10.0)
+    if name:
+        matching_members = [
+            member for member in ctx.guild.members
+            if name.lower() in member.name.lower() and not member.bot
+        ]
 
-                    if "cancel" in response.content.lower():
-                        await ctx.send(embed=discord.Embed(
-                            color=int("FA3939", 16),
-                            description="❌ The command has been canceled."
-                        ).set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url))
-                        return
-                    try:
-                        selection = int(response.content)
-                    except ValueError:
-                        await ctx.send(embed=discord.Embed(
-                            color=int("FA3939", 16),
-                            description="❌ Invalid selection."
-                        ).set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url))
-                        return
-                    else:
-                        if selection is not None:
-                            if (selection - 1) >= 0 and (selection - 1) <= (len(matching_names) - 1):
-                                matching_name = matching_names[selection - 1]
-                                for member in ctx.guild.members:
-                                    if member.name.lower() == matching_name.lower():
-                                        user = load_user(member.id)
-                                        await ctx.send(embed=discord.Embed(
-                                            description=f"💵 {member.name} has {user['money']} coins.",
-                                            color=int("50B4E6", 16)
-                                        ).set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url))
-                                        break
-                            else:
-                                await ctx.send(embed=discord.Embed(
-                                    color=int("FA3939", 16),
-                                    description="❌ Invalid selection."
-                                ).set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url))
-                                return
-                except asyncio.TimeoutError:
-                    await ctx.send(embed=discord.Embed(
-                        color=int("FA3939", 16),
-                        description="⏳ The command has been canceled because you took too long to reply."
-                    ).set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url))
-                    return
-            else:
-                for member in ctx.guild.members:
-                    if member.name.lower() == matching_names[0].lower():
-                        user = load_user(member.id)
-                        break
-        else:
-            user = load_user(ctx.author.id)
+        if not matching_members:
             await ctx.send(embed=discord.Embed(
-                description=f"💵 You have {user['money']} coins.",
+                description="❌ No matching users found.",
+                color=int("FA3939", 16)
+            ).set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url))
+            return
+
+        if len(matching_members) == 1:
+            target_member = matching_members[0]
+        else:
+            options = "\n".join(f"{i+1}. {m.name}" for i, m in enumerate(matching_members))
+            await ctx.send(embed=discord.Embed(
+                description=f"🔍 Multiple users found. Type the number to select, or `cancel`:\n{options}",
                 color=int("50B4E6", 16)
             ).set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url))
+
+            try:
+                response = await bot.wait_for(
+                    "message",
+                    check=lambda msg: msg.author == ctx.author and msg.channel == ctx.channel,
+                    timeout=15.0
+                )
+                if response.content.lower() == "cancel":
+                    await ctx.send(embed=discord.Embed(
+                        description="❌ The command has been canceled.",
+                        color=int("FA3939", 16)
+                    ).set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url))
+                    return
+
+                index = int(response.content) - 1
+                if 0 <= index < len(matching_members):
+                    target_member = matching_members[index]
+                else:
+                    await ctx.send(embed=discord.Embed(
+                        description="❌ Invalid selection.",
+                        color=int("FA3939", 16)
+                    ).set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url))
+
+            except (asyncio.TimeoutError, ValueError):
+                await ctx.send(embed=discord.Embed(
+                    description="⏳ The command has been canceled because you took too long to reply.",
+                    color=int("FA3939", 16)
+                ).set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url))
+                return
+    else:
+        target_member = ctx.author
+
+    user_data = load_user(target_member.id)
+    await ctx.send(embed=discord.Embed(
+        description=f"💵 {target_member.name} has {user_data['money']} coins.",
+        color=int("50B4E6", 16)
+    ).set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url))
 
 @bot.command(help="Check your inventory!")
 async def inventory(ctx):
