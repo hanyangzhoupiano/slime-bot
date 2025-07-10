@@ -8,11 +8,12 @@ from threading import Thread
 from pymongo import MongoClient
 
 TOKEN = ""
+URL = ""
 
 intents = discord.Intents.all()
 intents.messages = True
 
-client = MongoClient("mongodb+srv://hanyangzhou:bFWwgIC9glFPa6GL@cluster0.4wffiju.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+client = MongoClient(URL)
 
 bot = commands.Bot(command_prefix=lambda bot, message: "!", intents=intents, help_command=None)
 
