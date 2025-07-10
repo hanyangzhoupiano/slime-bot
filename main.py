@@ -177,7 +177,7 @@ async def sell(ctx):
     await ctx.send(embed=embed)
 
 @bot.command(help="Check your or another user's balance!")
-async def balance(ctx, user: str = None):
+async def balance(ctx, name: str = None):
     if name is not None:
         matching_names = []
         for member in ctx.guild.members:
