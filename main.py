@@ -20,10 +20,9 @@ user_cache = {}
 configuration = {
     "rarity_weights": {
         "Common": 55,
-        "Uncommon": 20,
-        "Rare": 12,
-        "Epic": 8,
-        "Legendary": 3,
+        "Rare": 25,
+        "Epic": 12,
+        "Legendary": 6,
         "Mythical": 1.5,
         "Secret": 0.5
     },
