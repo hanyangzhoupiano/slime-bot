@@ -17,7 +17,6 @@ client = MongoClient("mongodb+srv://hanyangzhou:bFWwgIC9glFPa6GL@cluster0.4wffij
 bot = commands.Bot(command_prefix=lambda bot, message: "!", intents=intents, help_command=None)
 
 configuration = {
-    "mutations": {},
     "rarity_weights": {
         "Common": 55,
         "Uncommon": 20,
@@ -126,9 +125,7 @@ async def fish(ctx):
     
     if not fish_pool:
         return None
-
     
-
     fish_name, fish_data = random.choice(fish_pool)
 
     min_w, max_w = fish_data["weight_range"]
