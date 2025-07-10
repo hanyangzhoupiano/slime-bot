@@ -1,164 +1,218 @@
 import discord
 import random
 import asyncio
-import math
-import time
-from discord.ext import commands
-from threading import Thread
+from discord.ext import commands, tasks
 from pymongo import MongoClient
+import time
 
 TOKEN = ""
 URL = ""
 
 intents = discord.Intents.all()
-intents.messages = True
+bot = commands.Bot(command_prefix="!", intents=intents, help_command=None)
 
 client = MongoClient(URL)
+db = client["fishing_bot"]
+users_collection = db["users"]
 
-bot = commands.Bot(command_prefix=lambda bot, message: "!", intents=intents, help_command=None)
-
-money = {}
-inventory = {}
+user_cache = {}
 
 configuration = {
     "rarity_weights": {
-        "Common": 55,
-        "Uncommon": 20,
-        "Rare": 12,
-        "Epic": 8,
-        "Legendary": 3,
-        "Mythical": 1.5,
-        "Secret": 0.5
+        "Common": 70,
+        "Rare": 30
     },
     "fishes": {
         "Common": {
-            "Largemouth Bass": {"value": 12, "weight_range": (1.4, 2.6)},
-            "Smallmouth Bass": {"value": 14, "weight_range": (1.1, 2.2)},
-            "Salmon": {"value": 9, "weight_range": (2.7, 4.7)},
-            "Cod": {"value": 5, "weight_range": (4.0, 6.6)},
-            "Tuna": {"value": 3, "weight_range": (10.1, 20.1)},
-            "Carp": {"value": 8, "weight_range": (2.2, 5.1)},
-            "Perch": {"value": 21, "weight_range": (0.4, 0.9)},
-            "Flounder": {"value": 9, "weight_range": (1.2, 3.6)},
-            "Anchovy": {"value": 46, "weight_range": (0.1, 0.3)},
-            "Sardine": {"value": 35, "weight_range": (0.2, 0.5)},
-            "Mackerel": {"value": 9, "weight_range": (1.3, 2.9)}
+            "Salmon": {"value": 10, "weight_range": (2.0, 4.0)}
         },
         "Rare": {
-            "Pike": {"value": 8, "weight_range": (4.8, 7.6)},
-            "Red Snapper": {"value": 12, "weight_range": (2.6, 4.4)},
-            "Barracuda": {"value": 10, "weight_range": (3.9, 5.7)},
-            "Sea Trout": {"value": 14, "weight_range": (2.1, 3.6)},
-            "Tilapia": {"value": 17, "weight_range": (1.8, 3.2)},
-            "Bluefish": {"value": 13, "weight_range": (2.3, 4.1)},
-            "Walleye": {"value": 12, "weight_range": (2.2, 4.7)},
-            "Catfish": {"value": 6, "weight_range": (5.6, 9.4)},
-            "Rockfish": {"value": 11, "weight_range": (2.5, 5.3)},
-            "Grouper": {"value": 6, "weight_range": (6.5, 10.4)}
-        },
-        "Epic": {
-            "Swordfish": {"value": 3, "weight_range": (20.5, 40.0)},
-            "Sturgeon": {"value": 4, "weight_range": (17.5, 29.5)},
-            "Halibut": {"value": 4, "weight_range": (14.0, 24.0)},
-            "Paddlefish": {"value": 3, "weight_range": (20.0, 40.0)},
-            "Giant Trevally": {"value": 6, "weight_range": (8.0, 14.0)},
-            "Tarpon": {"value": 4, "weight_range": (12.0, 20.0)},
-            "Amberjack": {"value": 5, "weight_range": (10.0, 16.0)},
-            "Opah": {"value": 3, "weight_range": (21.5, 40.0)},
-            "Mahi-Mahi": {"value": 6, "weight_range": (8.0, 15.0)},
-            "Arctic Char": {"value": 8, "weight_range": (5.5, 9.5)}
-        },
-        "Legendary": {
-            "Great White Shark": {"value": 0.4, "weight_range": (450.0, 1150.0)},
-            "Blue Marlin": {"value": 0.9, "weight_range": (150.0, 650.0)},
-            "Colossal Squid": {"value": 1.5, "weight_range": (200.0, 450.0)},
-            "Goliath Grouper": {"value": 1.1, "weight_range": (150.0, 400.0)},
-            "Sailfish": {"value": 2.4, "weight_range": (85.0, 120.0)},
-            "Beluga Sturgeon": {"value": 0.6, "weight_range": (300.0, 650.0)},
-            "Oarfish": {"value": 0.8, "weight_range": (200.0, 500.0)},
-            "Ocean Sunfish": {"value": 0.6, "weight_range": (250.0, 800.0)},
-            "Mako Shark": {"value": 1.2, "weight_range": (200.0, 500.0)},
-            "Thresher Shark": {"value": 1.4, "weight_range": (150.0, 350.0)}
-        },
-        "Mythical": {
-            "Megalodon": {"value": 0.8, "weight_range": (15000.0, 35000.0)},
-            "Orca": {"value": 2.6, "weight_range": (3000.0, 6000.0)},
-            "Kraken": {"value": 0.7, "weight_range": (15000.0, 30000.0)},
-            "Leviathan": {"value": 1.4, "weight_range": (8000.0, 20000.0)},
-            "Narwhal": {"value": 20, "weight_range": (800.0, 1600.0)},
-            "Sea Dragon": {"value": 2.1, "weight_range": (5000.0, 12000.0)}
-        },
-        "Secret": {
-            "Shadow Serpent": {"value": 5.5, "weight_range": (8000.0, 20000.0)}
+            "Pike": {"value": 20, "weight_range": (4.0, 6.0)}
         }
     }
 }
 
+# Helper Functions
+
+def load_user(user_id):
+    if user_id in user_cache:
+        return user_cache[user_id]
+    user = users_collection.find_one({"_id": user_id})
+    if not user:
+        user = {"_id": user_id, "money": 0, "inventory": []}
+        users_collection.insert_one(user)
+    user_cache[user_id] = user
+    return user
+
+def save_user(user_id):
+    if user_id in user_cache:
+        users_collection.update_one(
+            {"_id": user_id},
+            {"$set": {
+                "money": user_cache[user_id]["money"],
+                "inventory": user_cache[user_id]["inventory"]
+            }},
+            upsert=True
+        )
+
+@tasks.loop(seconds=30)
+async def periodic_save():
+    for user_id in list(user_cache.keys()):
+        save_user(user_id)
+
 @bot.event
 async def on_ready():
-    guild = discord.Object(id=1292978415552434196)
-    try:
-        synced = await bot.tree.sync()
-    except Exception as e:
-        pass
+    print(f"Logged in as {bot.user}")
+    periodic_save.start()
 
-@bot.event
-async def on_disconnect():
-    print("Bot disconnected. Attempting to reconnect in 5 seconds...")
-    await asyncio.sleep(5)
-
-@bot.event
-async def on_resumed():
-    print("Bot reconnected!")
-
-@bot.command(help="Make the bot say something.", aliases=["s"])
-async def say(ctx, *, text: str = ""):
-    if text:
-        await ctx.message.delete()
-        await ctx.send(embed=discord.Embed(
-            description=text,
-            color=int("50B4E6", 16)
-        ).set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url))
-
-@bot.command(help="Catch a fish!", aliases=[])
+@bot.command(help="Catch a fish!")
 async def fish(ctx):
-    rarities = configuration["rarity_weights"];
-    chosen_rarity = random.choices(list(rarities.keys()), weights=list(rarities.values()), k=1)[0]
+    user_id = ctx.author.id
+    user = load_user(user_id)
 
-    fish_pool = list(configuration["fishes"].get(chosen_rarity, {}).items())
-    
-    if not fish_pool:
-        return None
-    
-    fish_name, fish_data = random.choice(fish_pool)
+    rarity = random.choices(
+        list(configuration["rarity_weights"].keys()),
+        weights=list(configuration["rarity_weights"].values()),
+        k=1
+    )[0]
 
-    min_w, max_w = fish_data["weight_range"]
-    weight = round(random.uniform(min_w, max_w), 1)
-    price = round(fish_data["value"] * weight)
+    fish_name, fish_data = random.choice(list(configuration["fishes"][rarity].items()))
+    weight = round(random.uniform(*fish_data["weight_range"]), 1)
+    value = round(fish_data["value"] * weight)
+
+    fish_obj = {
+        "name": fish_name,
+        "weight": weight,
+        "value": value,
+        "rarity": rarity
+    }
+
+    user["inventory"].append(fish_obj)
 
     embed = discord.Embed(
-        description=f"🎣 You caught a **{fish_name}** ({chosen_rarity}) at {weight}kg!",
+        description=f"🎣 You caught a **{fish_name}** ({rarity}) at {weight}kg!",
         color=int("50B4E6", 16)
     ).set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url)
-
-    if ctx.author.id not in inventory:
-        inventory[ctx.author.id] = []
-
-    inventory[ctx.author.id].append({"name": fish_name, "weight": weight, "value": value, "rarity": chosen_rarity})
-    
     await ctx.send(embed=embed)
 
-@bot.command(help="Sell your fish!", aliases=[])
+@bot.command(help="Sell your fish!")
 async def sell(ctx):
-    if ctx.author.id not in inventory:
+    user_id = ctx.author.id
+    user = load_user(user_id)
+
+    if not user["inventory"]:
         await ctx.send(embed=discord.Embed(
-            description="❌ You do not have any fish to sell!",
+            description="❌ You have no fish to sell!",
             color=int("FA3939", 16)
         ).set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url))
+        return
 
+    total = sum(f["value"] for f in user["inventory"])
+    user["money"] += total
+    user["inventory"] = []
+
+    embed = discord.Embed(
+        description=f"💰 You sold your fish for {total} coins!",
+        color=int("50B4E6", 16)
+    ).set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url)
+    await ctx.send(embed=embed)
+
+@bot.command(help="Check your or another user's balance!")
+async def balance(ctx, user):
+    if name is not None:
+        matching_names = []
+        for member in ctx.guild.members:
+            if name.lower() in member.name.lower() and not member.bot:
+                matching_names.append(member.name)
+        if matching_names:
+            if len(matching_names) > 1:
+                msg = ""
+                for i, n in enumerate(matching_names):
+                    msg += str(i + 1) + ". " + n
+                    if i != len(matching_names) - 1:
+                        msg += "\n"
+                try:
+                    await ctx.send(embed=discord.Embed(
+                        color=int("50B4E6", 16),
+                        description=f"Mutiple users found. Please select a user below, or type cancel:\n{msg}"
+                    ).set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url))
+
+                    selection = None
+                    response = await bot.wait_for('message', check=lambda msg: msg.channel == ctx.channel and msg.author == ctx.author, timeout=10.0)
+
+                    if "cancel" in response.content.lower():
+                        await ctx.send(embed=discord.Embed(
+                            color=int("FA3939", 16),
+                            description="❌ The command has been canceled."
+                        ).set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url))
+                        return
+                    try:
+                        selection = int(response.content)
+                    except ValueError:
+                        await ctx.send(embed=discord.Embed(
+                            color=int("FA3939", 16),
+                            description="❌ Invalid selection."
+                        ).set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url))
+                        return
+                    else:
+                        if selection is not None:
+                            if (selection - 1) >= 0 and (selection - 1) <= (len(matching_names) - 1):
+                                matching_name = matching_names[selection - 1]
+                                for member in ctx.guild.members:
+                                    if member.name.lower() == matching_name.lower():
+                                        user = load_user(member.id)
+                                        await ctx.send(embed=discord.Embed(
+                                            description=f"💵 {member.name} has {user['money']} coins.",
+                                            color=int("50B4E6", 16)
+                                        ).set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url))
+                                        break
+                            else:
+                                await ctx.send(embed=discord.Embed(
+                                    color=int("FA3939", 16),
+                                    description="❌ Invalid selection."
+                                ).set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url))
+                                return
+                except asyncio.TimeoutError:
+                    await ctx.send(embed=discord.Embed(
+                        color=int("FA3939", 16),
+                        description="⏳ The command has been canceled because you took too long to reply."
+                    ).set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url))
+                    return
+            else:
+                for member in ctx.guild.members:
+                    if member.name.lower() == matching_names[0].lower():
+                        user = load_user(member.id)
+                        break
+        else:
+            user = load_user(ctx.author.id)
+            await ctx.send(embed=discord.Embed(
+                description=f"💵 You have {user['money']} coins.",
+                color=int("50B4E6", 16)
+            ).set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url))
+
+@bot.command(help="Check your inventory!")
+async def inventory(ctx):
+    user = load_user(ctx.author.id)
+    if not user["inventory"]:
+        await ctx.send(embed=discord.Embed(
+            description="🎒 Your inventory is empty!",
+            color=int("50B4E6", 16)
+        ).set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url))
+        return
+
+    lines = [f"• **{f['name']}** ({f['rarity']}) - {f['weight']}kg, 💰 {f['value']}" for f in user["inventory"]]
     await ctx.send(embed=discord.Embed(
-        description=f"💰 You sold all of your fish and got {}!",
-        color=int("FA3939", 16)
+        title="🎒 Your Inventory",
+        description="\n".join(lines[:10]),
+        color=int("50B4E6", 16)
+    ).set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url))
+
+@bot.command(help="Force save your data to the database.")
+async def save(ctx):
+    save_user(ctx.author.id)
+    await ctx.send(embed=discord.Embed(
+        description="✅ Your data has been saved to the database. Note: data autosaves every 30 seconds",
+        color=int("50B4E6", 16)
     ).set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url))
 
 bot.run(TOKEN)
