@@ -137,9 +137,7 @@ async def fish(ctx):
     price = round(fish_data["value"] * weight)
 
     embed = discord.Embed(
-        description=f"🎣 You caught a **{fish_name}** ({chosen_rarity})!\n"
-                    f"💪 Weight: `{weight} kg`\n"
-                    f"💰 Value: `${price}`",
+        description=f"🎣 You caught a **{fish_name}** ({chosen_rarity}) at {weight}kg!",
         color=int("50B4E6", 16)
     ).set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url)
 
@@ -159,7 +157,7 @@ async def sell(ctx):
         ).set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url))
 
     await ctx.send(embed=discord.Embed(
-        description="💰 You sold all of your fish and !",
+        description=f"💰 You sold all of your fish and got {}!",
         color=int("FA3939", 16)
     ).set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url))
 
