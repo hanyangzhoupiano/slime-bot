@@ -17,6 +17,9 @@ client = MongoClient(URL)
 
 bot = commands.Bot(command_prefix=lambda bot, message: "!", intents=intents, help_command=None)
 
+money = {}
+inventory = {}
+
 configuration = {
     "rarity_weights": {
         "Common": 55,
@@ -140,6 +143,24 @@ async def fish(ctx):
         color=int("50B4E6", 16)
     ).set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url)
 
-    await ctx.send(embed=embed)
+    if ctx.author.id not in inventory:
+        inventory[ctx.author.id] = []
+
+    inventory[ctx.author.id].append({"name": fish_name, "weight": weight, "value": value, "rarity": chosen_rarity})
     
+    await ctx.send(embed=embed)
+
+@bot.command(help="Sell your fish!", aliases=[])
+async def sell(ctx):
+    if ctx.author.id not in inventory:
+        await ctx.send(embed=discord.Embed(
+            description="❌ You do not have any fish to sell!",
+            color=int("FA3939", 16)
+        ).set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url))
+
+    await ctx.send(embed=discord.Embed(
+        description="💰 You sold all of your fish and !",
+        color=int("FA3939", 16)
+    ).set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url))
+
 bot.run(TOKEN)
