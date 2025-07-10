@@ -251,7 +251,7 @@ async def inventory(ctx):
     lines = [f"• **{f['name']}** ({f['rarity']}) - {f['weight']}kg, 💰 {f['value']}" for f in user["inventory"]]
     await ctx.send(embed=discord.Embed(
         title="🎒 Your Inventory",
-        description="\n".join(lines[:10]),
+        description="\n".join(lines),
         color=int("50B4E6", 16)
     ).set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url))
 
