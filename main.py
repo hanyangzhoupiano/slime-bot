@@ -18,7 +18,7 @@ users_collection = db["users"]
 user_cache = {}
 
 configuration = {
-    "rarity_weights": {
+    "base_weights": {
         "Common": 55,
         "Rare": 25,
         "Epic": 12,
@@ -77,12 +77,10 @@ configuration = {
             "Thresher Shark": {"value": 1.4, "weight_range": (150.0, 350.0)}
         },
         "Mythical": {
-            "Megalodon": {"value": 0.8, "weight_range": (15000.0, 35000.0)},
-            "Orca": {"value": 2.6, "weight_range": (3000.0, 6000.0)},
-            "Kraken": {"value": 0.7, "weight_range": (15000.0, 30000.0)},
-            "Leviathan": {"value": 1.4, "weight_range": (8000.0, 20000.0)},
-            "Narwhal": {"value": 20, "weight_range": (800.0, 1600.0)},
-            "Sea Dragon": {"value": 2.1, "weight_range": (5000.0, 12000.0)}
+            "Megalodon": {"value": 1.2, "weight_range": (15000.0, 35000.0)},
+            "Orca": {"value": 3, "weight_range": (3000.0, 6000.0)},
+            "Kraken": {"value": 1.1, "weight_range": (15000.0, 30000.0)},
+            "Leviathan": {"value": 1.8, "weight_range": (8000.0, 20000.0)}
         },
         "Secret": {
             "Shadow Serpent": {"value": 5.5, "weight_range": (8000.0, 20000.0)}
@@ -129,8 +127,8 @@ async def fish(ctx):
     user = load_user(user_id)
 
     rarity = random.choices(
-        list(configuration["rarity_weights"].keys()),
-        weights=list(configuration["rarity_weights"].values()),
+        list(configuration["base_weights"].keys()),
+        weights=list(configuration["base_weights"].values()),
         k=1
     )[0]
 
@@ -142,7 +140,8 @@ async def fish(ctx):
         "name": fish_name,
         "weight": weight,
         "value": value,
-        "rarity": rarity
+        "rarity": rarity,
+        "mutations": []
     }
 
     user["inventory"].append(fish_obj)
@@ -234,7 +233,7 @@ async def balance(ctx, name: str = None):
 
     user_data = load_user(target_member.id)
     await ctx.send(embed=discord.Embed(
-        description=f"💵 {target_member.name} has {user_data['money']} coins.",
+        description=f"💵 **{target_member.name}** has {user_data['money']} coins.",
         color=int("50B4E6", 16)
     ).set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url))
 
@@ -248,7 +247,7 @@ async def inventory(ctx):
         ).set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url))
         return
 
-    lines = [f"• **{f['name']}** ({f['rarity']}) - {f['weight']}kg, 💰 {f['value']}" for f in user["inventory"]]
+    lines = [f"• **{f['name']}** ({f['rarity']}) - {f['weight']}kg, Value: {f['value']}" for f in user["inventory"]]
     await ctx.send(embed=discord.Embed(
         title="🎒 Your Inventory",
         description="\n".join(lines),
