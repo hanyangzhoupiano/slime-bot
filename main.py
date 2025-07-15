@@ -19,6 +19,9 @@ db = client["fishing_bot"]
 users_collection = db["users"]
 
 user_cache = {}
+messages = [
+    {"role": "system", "content": "You are a helpful assistant named 'Slime Bot.'"}
+]
 
 configuration = {
     "base_weights": {
@@ -154,6 +157,38 @@ async def fish(ctx):
         color=int("50B4E6", 16)
     ).set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url)
     await ctx.send(embed=embed)
+
+@bot.command(help="Clear chat history with Slime Bot!")
+async def clear(ctx):
+    messages = [
+        {"role": "system", "content": "You are a helpful assistant named 'Slime Bot.'"}
+    ]
+
+    await ctx.send(embed = discord.Embed(
+        description="✅ Successfully cleared chat history.",
+        color=int("50B4E6", 16)
+    ).set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url))
+
+@bot.command(help="Chat with Slime Bot!")
+async def chat(ctx, message: str):
+    messages.append({"role": "user", "content": message})
+
+    response = client.chat.completions.create(
+        model="meta-llama/llama-4-scout-17b-16e-instruct",
+        messages=messages,
+        temperature=1,
+        max_tokens=1024,
+        top_p=1,
+        stream=False
+    )
+    reply = response.choices[0].message.content
+
+    messages.append({"role": "assistant", "content": reply})
+
+    await ctx.send(embed = discord.Embed(
+        description=reply,
+        color=int("50B4E6", 16)
+    ).set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url))
 
 @bot.command(help="Sell your fish!")
 async def sell(ctx):
