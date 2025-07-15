@@ -20,7 +20,7 @@ users_collection = db["users"]
 
 user_cache = {}
 messages = [
-    {"role": "system", "content": "You are a helpful assistant named 'Slime Bot.'"}
+    {"role": "system", "content": "You are a helpful assistant named 'Slime Bot' that loves fishing."}
 ]
 
 configuration = {
@@ -160,8 +160,9 @@ async def fish(ctx):
 
 @bot.command(help="Clear chat history with Slime Bot!")
 async def clear(ctx):
+    global messages
     messages = [
-        {"role": "system", "content": "You are a helpful assistant named 'Slime Bot.'"}
+        {"role": "system", "content": "You are a helpful assistant named 'Slime Bot' that loves fishing."}
     ]
 
     await ctx.send(embed = discord.Embed(
