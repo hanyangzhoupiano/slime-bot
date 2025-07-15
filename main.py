@@ -173,7 +173,7 @@ async def clear(ctx):
 async def chat(ctx, message: str):
     messages.append({"role": "user", "content": message})
 
-    response = client.chat.completions.create(
+    response = groq_client.chat.completions.create(
         model="meta-llama/llama-4-scout-17b-16e-instruct",
         messages=messages,
         temperature=1,
