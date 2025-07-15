@@ -3,14 +3,17 @@ import random
 import asyncio
 from discord.ext import commands, tasks
 from pymongo import MongoClient
+from groq import Groq
 import time
 
 TOKEN = ""
 URL = ""
+API_KEY = ""
 
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix="!", intents=intents, help_command=None)
 
+groq_client = Groq(api_key=API_KEY)
 client = MongoClient(URL)
 db = client["fishing_bot"]
 users_collection = db["users"]
